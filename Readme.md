@@ -1,131 +1,142 @@
-# WAX Pump Bot Setup Guide
+# WAX Pump Bot
+
+A Telegram bot that monitors WAX token purchases and sends notifications to specified channels and groups with topic support.
+
+## Features
+
+- Real-time monitoring of WAX token purchases
+- Support for multiple destinations (channels and groups)
+- Topic support in groups
+- Dynamic emoji display based on purchase amount
+- Market cap calculation
+- Testnet and mainnet support
 
 ## Prerequisites
 
-1. Node.js (v16 or higher)
-2. npm (Node Package Manager)
-3. Git
+- Node.js v16 or higher
+- npm (Node Package Manager)
+- Telegram Bot Token (from @BotFather)
+- Substreams API Token
+- CoinMarketCap API Key
 
-## Required Accounts & API Keys
+## Installation
 
-Before starting, you'll need:
-
-1. Telegram Bot Token (from @BotFather)
-2. Telegram Channel ID
-3. Substreams API Token (from Pinax)
-4. CoinMarketCap API Key
-
-## Installation Steps
-
-1. Clone the repository
+1. Clone the repository:
 ```bash
 git clone <your-repo-url>
 cd wax-pump-bot
 ```
 
-2. Install dependencies
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Set up environment variables
+3. Copy environment file and configure:
 ```bash
 cp .env.example .env
 ```
 
-4. Edit the `.env` file with your credentials:
-- Add your Telegram Bot Token
-- Add your Telegram Channel ID
-- Add your Substreams API Token
-- Add your CoinMarketCap API Key
-- Verify NETWORK=testnet
+## Configuration
 
-## Setting up the Telegram Bot
+### Environment Variables
 
-1. Create a new bot:
-   - Open Telegram and search for @BotFather
-   - Send `/newbot` command
-   - Follow the prompts to create your bot
-   - Save the API token provided
+Edit your `.env` file with the following:
 
-2. Create a Telegram channel:
-   - Create a new channel in Telegram
-   - Make it public or private
-   - Add your bot as an administrator with posting permissions
+```env
+# Telegram Bot Token (Get from @BotFather)
+TELEGRAM_BOT_TOKEN=your_bot_token_here
 
-3. Get the Channel ID:
-   - Forward a message from your channel to @userinfobot
-   - It will show you the channel ID
-   - For public channels, use the channel username with @ prefix
-   - For private channels, use the numeric ID (usually starts with -100)
+# Destinations (Examples below)
+TELEGRAM_DESTINATIONS=@yourchannel,-100123456789,@group1:123
+
+# API Keys
+SUBSTREAMS_API_TOKEN=your_substreams_token_here
+COINMARKETCAP_API_KEY=your_cmc_api_key_here
+
+# Network (testnet or mainnet)
+NETWORK=testnet
+```
+
+### Destination Format Examples
+
+- Public channel: `@channelname`
+- Private channel: `-100123456789`
+- Group with topic: `@groupname:123` (where 123 is topic ID)
+- Private group with topic: `-100123456789:456`
+- Multiple destinations: Combine with commas
+
+### Setting Up Topics in Groups
+
+1. Add your bot to the group as an administrator
+2. Enable topics in group settings
+3. Create a topic
+4. Get topic ID from URL when clicking the topic
+5. Add to TELEGRAM_DESTINATIONS using the format: `groupname:topicId`
 
 ## Running the Bot
 
-1. Start in development mode (with auto-reload):
+### Development Mode (with auto-reload):
 ```bash
 npm run dev
 ```
 
-2. Start in production mode:
+### Production Mode:
 ```bash
 npm start
 ```
 
-## Testing the Setup
-
-1. Verify the bot is running:
-   - Check console output for "Starting WAX Token Bot on testnet..."
-   - No error messages should appear
-
-2. Verify Telegram connection:
-   - The bot should be online in your Telegram channel
-   - Check the bot's status in @BotFather
-
-3. Monitor logs:
-   - Watch the console output for incoming transactions
-   - Check for any error messages or connection issues
-
 ## Troubleshooting
 
-Common issues and solutions:
+### Common Issues
 
-1. Connection errors:
-   - Verify your Substreams API token
-   - Check your internet connection
-   - Ensure the testnet endpoint is accessible
+1. Bot not posting:
+   - Verify bot has admin rights in channels/groups
+   - Check if channel/group IDs are correct
+   - Ensure bot token is valid
 
-2. Telegram errors:
-   - Verify bot has admin rights in the channel
-   - Check if the channel ID is correct
-   - Ensure the bot token is valid
+2. Topic messages not working:
+   - Verify topics are enabled in group
+   - Check topic ID is correct
+   - Confirm bot has permission to post in topics
 
-3. Missing transactions:
-   - Verify the contract address is correct
-   - Check if you're connected to the right network
-   - Ensure the Substreams module is properly configured
+3. Connection errors:
+   - Verify Substreams API token
+   - Check network setting (testnet/mainnet)
+   - Ensure stable internet connection
 
-## Directory Structure
+### Getting IDs and Tokens
 
-```
-wax-pump-bot/
-├── src/
-│   └── index.js
-├── .env
-├── .env.example
-├── package.json
-└── README.md
-```
+1. Channel ID:
+   - Forward message from channel to @userinfobot
+   - Use channel username with @ prefix for public channels
 
-## Maintenance
+2. Group ID:
+   - Add @userinfobot to group
+   - Forward message from group to get ID
 
-- Keep dependencies updated with `npm update`
-- Monitor error logs regularly
-- Check for updates to the Substreams package
+3. Topic ID:
+   - Click on topic in group
+   - Get ID from URL
+
+## Monitoring and Maintenance
+
+- Check console logs for errors
+- Monitor bot status in @BotFather
 - Verify API key expiration dates
+- Keep dependencies updated with `npm update`
 
 ## Security Notes
 
 - Never commit your .env file
-- Keep your API keys secure
-- Regularly rotate API keys if possible
-- Monitor bot activity for unusual patterns
+- Keep API keys secure
+- Regularly rotate tokens if possible
+- Monitor bot activities
+
+## Support
+
+For issues and feature requests, please create an issue in the repository.
+
+## License
+
+[Your License]
