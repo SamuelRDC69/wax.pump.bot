@@ -11,11 +11,20 @@ dotenv.config();
 
 const {
     TELEGRAM_BOT_TOKEN,
-    TELEGRAM_CHANNEL_ID,
+    TELEGRAM_DESTINATIONS,
     SUBSTREAMS_API_TOKEN,
     COINMARKETCAP_API_KEY,
-    NETWORK = 'testnet' // Allow switching between mainnet and testnet
+    NETWORK = 'testnet'
 } = process.env;
+
+// Parse destinations from env - handles channels, groups, and topics
+const destinations = TELEGRAM_DESTINATIONS.split(',').map(dest => {
+    const [chatId, threadId] = dest.trim().split(':');
+    return { 
+        chatId: chatId.trim(),
+        threadId: threadId ? parseInt(threadId.trim()) : null 
+    };
+});
 
 // Constants
 const TOTAL_SUPPLY = 1_000_000_000; // 1 billion tokens
@@ -35,8 +44,11 @@ const CMC_API_URL = "https://pro-api.coinmarketcap.com/v2/tools/price-conversion
 const ENDPOINT = ENDPOINTS[NETWORK];
 const CONTRACT_ACCOUNT = CONTRACTS[NETWORK];
 
-// Initialize Telegram Bot
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: false });
+// Initialize Telegram Bot with group support
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { 
+    polling: false,
+    allowedUpdates: ['message', 'channel_post']
+});
 
 // Function to get WAX price from CoinMarketCap
 async function getWAXPrice() {
@@ -110,6 +122,32 @@ function parseLogBSL(actionData) {
     }
 }
 
+// Send message to all configured destinations
+async function sendMessageToDestinations(message) {
+    const messageOptions = {
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true
+    };
+
+    for (const dest of destinations) {
+        try {
+            if (dest.threadId) {
+                // Send to specific topic in group
+                await bot.sendMessage(dest.chatId, message, {
+                    ...messageOptions,
+                    message_thread_id: dest.threadId
+                });
+            } else {
+                // Send to channel or general group chat
+                await bot.sendMessage(dest.chatId, message, messageOptions);
+            }
+        } catch (error) {
+            console.error(`Error sending to ${dest.chatId}:${dest.threadId || 'no-topic'}:`, error);
+            console.error(error.response?.body || error);
+        }
+    }
+}
+
 // Function to format transaction message
 async function formatMessage(logData, trxId, waxPrice) {
     const {
@@ -125,7 +163,6 @@ async function formatMessage(logData, trxId, waxPrice) {
     const emojis = calculateEmojis(waxAmount, waxPrice);
     const shortTrxId = `${trxId.slice(0, 7)}…`;
 
-    // Calculate market cap based on current price and total supply
     const marketCap = TOTAL_SUPPLY * currentPrice * waxPrice;
 
     const explorerPrefix = NETWORK === 'testnet' ? 'testnet.' : '';
@@ -144,7 +181,6 @@ Made with 💚 by Wax Bot`;
 // Function to process transaction traces
 async function processTransaction(traces, trxId) {
     try {
-        // Look for the logbsl action in the traces
         const logBSLAction = traces.find(trace => 
             trace.action === 'logbsl' && 
             trace.account === CONTRACT_ACCOUNT
@@ -159,10 +195,7 @@ async function processTransaction(traces, trxId) {
         const message = await formatMessage(logData, trxId, waxPrice);
 
         if (message) {
-            await bot.sendMessage(TELEGRAM_CHANNEL_ID, message, {
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true
-            });
+            await sendMessageToDestinations(message);
         }
     } catch (error) {
         console.error('Error processing transaction:', error);
